@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Nexora.Core
+    ===========
+    Biblioteca con la "lógica" del proyecto: detectar la cara y los ojos, poner
+    los filtros, sacar los 21 puntos de la mano, decidir qué gesto es, calcular
+    a dónde va el cursor y entender las órdenes de voz.
+
+    La separamos de la ventana (Nexora.App) por dos motivos:
+      1. Así la ventana solo se encarga de pintar y de escuchar eventos (MVVM).
+      2. Podemos hacer pruebas automáticas (Nexora.Tests) de los gestos, la zona
+         muerta, etc. sin tener que abrir la cámara.
+
+    Es net10.0 "normal" (no -windows) porque aquí no hay nada de WPF ni de Windows.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Nexora.Core</RootNamespace>
+    <!-- Generamos el XML de documentación para que salgan los comentarios /// en el IDE -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Solo la parte "managed" de OpenCvSharp. Los binarios nativos de OpenCV
+         (las .dll de verdad) los añade el proyecto de la ventana. -->
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
+  </ItemGroup>
+
+</Project>

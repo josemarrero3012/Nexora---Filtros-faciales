@@ -1,0 +1,159 @@
+<!--
+    App.xaml
+    ========
+    Punto de entrada de la aplicación WPF. StartupUri dice qué ventana se abre
+    al arrancar. En los Resources dejamos los colores y los estilos que se usan
+    en toda la ventana (así no los repetimos en cada control).
+
+    Tema oscuro: fondo azul muy oscuro, tarjetas un poco más claras y un color
+    de acento cian, que es el mismo que usamos para la zona de control.
+-->
+<Application x:Class="Nexora.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="Views/MainWindow.xaml">
+    <Application.Resources>
+
+        <!-- ===================== Colores ===================== -->
+        <SolidColorBrush x:Key="FondoBrush" Color="#0F172A" />
+        <SolidColorBrush x:Key="TarjetaBrush" Color="#1E293B" />
+        <SolidColorBrush x:Key="TarjetaClaraBrush" Color="#273449" />
+        <SolidColorBrush x:Key="BordeBrush" Color="#334155" />
+        <SolidColorBrush x:Key="TextoBrush" Color="#E2E8F0" />
+        <SolidColorBrush x:Key="TextoSuaveBrush" Color="#94A3B8" />
+        <SolidColorBrush x:Key="AcentoBrush" Color="#38BDF8" />
+        <SolidColorBrush x:Key="VerdeBrush" Color="#34D399" />
+        <SolidColorBrush x:Key="AmbarBrush" Color="#FBBF24" />
+        <SolidColorBrush x:Key="RojoBrush" Color="#F87171" />
+        <SolidColorBrush x:Key="MoradoBrush" Color="#A78BFA" />
+
+        <!-- ===================== Textos ===================== -->
+        <Style x:Key="TituloTarjeta" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextoSuaveBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <Style x:Key="TextoSuave" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextoSuaveBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <!-- ===================== Tarjeta (recuadro con fondo) ===================== -->
+        <Style x:Key="Tarjeta" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource TarjetaBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BordeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <!--
+            Interruptor: un CheckBox de toda la vida, pero con otra "plantilla"
+            para que parezca un switch. El IsChecked sigue funcionando igual, así
+            que el Binding con el ViewModel no cambia.
+        -->
+        <Style x:Key="Interruptor" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Border x:Name="Pista" Grid.Column="1" Width="40" Height="22" CornerRadius="11"
+                                    VerticalAlignment="Center" Background="{StaticResource BordeBrush}">
+                                <Ellipse x:Name="Bola" Width="16" Height="16" Margin="3,0" Fill="White"
+                                         HorizontalAlignment="Left" />
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Pista" Property="Background" Value="{StaticResource AcentoBrush}" />
+                                <Setter TargetName="Bola" Property="HorizontalAlignment" Value="Right" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== Botones planos ===================== -->
+        <Style x:Key="BotonPlano" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
+            <Setter Property="Background" Value="{StaticResource TarjetaClaraBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BordeBrush}" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fondo" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource BordeBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--
+            Botones de filtro: un ListBox con cada opción como una "pastilla".
+            La que está seleccionada se pinta con el color de acento.
+        -->
+        <Style x:Key="PastillaFiltro" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Fondo" CornerRadius="14" Padding="10,5" BorderThickness="1"
+                                Background="{StaticResource TarjetaClaraBrush}" BorderBrush="{StaticResource BordeBrush}">
+                            <TextBlock x:Name="Texto" Text="{Binding Nombre}" FontSize="12"
+                                       Foreground="{StaticResource TextoBrush}" HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource AcentoBrush}" />
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
+                                <Setter TargetName="Texto" Property="Foreground" Value="{StaticResource FondoBrush}" />
+                                <Setter TargetName="Texto" Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===================== Etiquetas de los sliders ===================== -->
+        <Style x:Key="EtiquetaAjuste" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,8,0,2" />
+        </Style>
+
+    </Application.Resources>
+</Application>

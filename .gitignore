@@ -1,0 +1,47 @@
+# =============================================================
+#  .gitignore de Nexora (Visual Studio + Rider + .NET)
+#  Lo que se genera al compilar o lo que es de cada ordenador
+#  no se sube al repositorio.
+# =============================================================
+
+# Carpetas de compilación
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rtifacts/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Resultados de las pruebas
+TestResults/
+[Tt]est[Rr]esult*/
+coverage*.xml
+
+# NuGet
+*.nupkg
+packages/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (del script de los filtros)
+__pycache__/
+*.pyc

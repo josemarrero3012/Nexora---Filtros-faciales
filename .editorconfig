@@ -1,0 +1,24 @@
+# Estilo común para Visual Studio y Rider (así los dos IDE formatean igual)
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_size = 4
+# Namespaces de una línea (file-scoped), como en todo el proyecto
+csharp_style_namespace_declarations = file_scoped:suggestion
+# Llaves en su propia línea
+csharp_new_line_before_open_brace = all
+
+[*.{xaml,csproj,props,targets,xml,json}]
+indent_size = 2
+
+[*.xaml]
+indent_size = 4
+
+[*.py]
+indent_size = 4

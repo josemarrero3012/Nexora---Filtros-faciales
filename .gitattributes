@@ -1,0 +1,11 @@
+# Normalizamos los finales de línea de los archivos de texto
+* text=auto
+
+# Archivos de Visual Studio con finales de línea de Windows
+*.sln text eol=crlf
+*.csproj text eol=crlf
+
+# Archivos binarios (que git no intente "arreglarlos")
+*.png binary
+*.onnx binary
+*.dll binary

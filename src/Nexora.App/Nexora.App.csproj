@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Nexora.App
+    ==========
+    La aplicación de escritorio (WPF con MVVM, como el mando multimodal de clase).
+
+    - Views:       la ventana (XAML). Solo pinta y enlaza (Binding) con el ViewModel.
+    - ViewModels:  el MainViewModel con las propiedades que se actualizan solas
+                   (CommunityToolkit.Mvvm) y el historial de eventos.
+    - Servicios:   un servicio por módulo (cámara, cara, gestos, voz y ratón). Cada
+                   uno avisa con un evento cuando pasa algo y la ventana se limita a escuchar.
+    - Interop:     las funciones de Windows para mover el ratón (SetCursorPos, SendInput).
+    - Recursos:    archivos de Haar Cascade, el modelo de la mano y los PNG de los filtros.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Nexora.App</RootNamespace>
+    <AssemblyName>Nexora</AssemblyName>
+    <Title>Nexora</Title>
+    <Product>Nexora</Product>
+    <Description>Sistema multimodal de interacción persona-ordenador mediante visión artificial y reconocimiento de voz.</Description>
+    <Authors>Samara del Carmen Bolaños González; José Manuel López Marrero</Authors>
+
+    <!--
+      Esto deja COMPILAR el proyecto en Linux o macOS (por ejemplo, con Rider).
+      Para EJECUTARLO hace falta Windows, porque WPF, System.Speech y las
+      funciones del ratón son solo de Windows.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MVVM: [ObservableProperty] y [RelayCommand], como en clase -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Las DLL nativas de OpenCV para Windows -->
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />
+    <!-- Para pasar un Mat de OpenCV a una imagen de WPF (ToWriteableBitmap) -->
+    <PackageReference Include="OpenCvSharp4.WpfExtensions" Version="4.13.0.20260627" />
+    <!-- Reconocimiento y síntesis de voz, como en las prácticas -->
+    <PackageReference Include="System.Speech" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexora.Core\Nexora.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copiamos la carpeta Recursos entera junto al .exe para poder abrir los archivos con su ruta -->
+    <None Update="Recursos\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
