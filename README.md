@@ -19,6 +19,7 @@ La idea es sencilla: manejar el ordenador con la mano y con la voz, usando la we
 | Módulo | Qué hace | Origen |
 |---|---|---|
 | **Filtros faciales** | Busca la cara y los ojos con Haar Cascade y les pone unas gafas, unas orejas de gato o un antifaz que siguen el movimiento (se escalan y se giran con la cabeza). | Visto en clase |
+| **Filtro realista** | El filtro no parpadea si se pierde la cara un momento, lleva una sombra suave y se oscurece si hay poca luz. Se puede apagar para comparar. | Ampliación con uso de IA |
 | **Control por gestos** | Saca 21 puntos de la mano con un modelo ONNX que abre el módulo DNN de OpenCV y reconoce 4 gestos para mover el ratón de verdad. | Ampliación con uso de IA |
 | **Control por voz** | Entiende unas pocas órdenes en español (lista cerrada) y contesta en voz alta. Solo hace caso si está seguro al menos un 60 %. | Visto en clase |
 | **Plan B** | Si la mano da guerra, el cursor se mueve con la cabeza usando la zona muerta y el clic se hace diciendo «clic». | Visto en clase |
@@ -79,7 +80,7 @@ Desde el *Explorador de pruebas* de Visual Studio, la ventana *Unit Tests* de Ri
 ```bash
 dotnet test
 ```
-Son 46 pruebas de la lógica (gestos, zona muerta, colocación de filtros, órdenes de voz y medidor de FPS). No necesitan cámara ni micrófono, así que se pueden lanzar en cualquier ordenador.
+Son 54 pruebas de la lógica (gestos, zona muerta, colocación de filtros, aparecer y desaparecer del filtro, ajuste a la luz, órdenes de voz y medidor de FPS). No necesitan cámara ni micrófono, así que se pueden lanzar en cualquier ordenador.
 
 ---
 
@@ -91,7 +92,7 @@ Nexora.sln
 │   ├── Nexora.Core/              ← la lógica (no depende de Windows ni de WPF)
 │   │   ├── Configuracion/        AjustesNexora: todos los "números mágicos" juntos
 │   │   ├── Modelos/              Gesto, ComandoVoz, TipoFiltro, EventoNexora, resultados...
-│   │   ├── Vision/               DetectorCaras, DetectorMano, AplicadorFiltros, Dibujante...
+│   │   ├── Vision/               DetectorCaras, DetectorMano, AplicadorFiltros, EstabilizadorFiltro...
 │   │   ├── Gestos/               ClasificadorGestos (los 4 gestos con histéresis)
 │   │   ├── Cursor/               ControlCursor (suavizado, zona muerta, plan B, rueda)
 │   │   ├── Voz/                  InterpreteOrdenes (lista cerrada y el 60 %)
@@ -114,7 +115,8 @@ Nexora.sln
 │   └── generar_filtros.py        ← script con el que dibujamos los PNG de los filtros
 │
 └── docs/
-    └── Pruebas.md                ← plantilla para apuntar las medidas de la memoria
+    ├── Pruebas.md                ← plantilla para apuntar las medidas de la memoria
+    └── Uso-de-IA.md              ← qué hicimos con ayuda de IA, por qué y cómo defenderlo
 ```
 
 **¿Por qué dos proyectos?** Así la ventana solo se encarga de pintar y escuchar eventos (MVVM, como en el mando multimodal de clase) y toda la lógica se puede probar con tests sin abrir la cámara.
@@ -143,10 +145,13 @@ La cámara trabaja en su **propio hilo** (`ServicioCamara`) para que la ventana 
 | Encontrar la cara (1,1 · 4 vecinos · mínimo 80×80) | `CascadeClassifier`, `DetectMultiScale` | `DetectorCaras` | Clase |
 | Encontrar los ojos dentro de la cara | Haar Cascade con el archivo de ojos | `DetectorCaras` | Clase |
 | Escalar, girar y mezclar el PNG con su transparencia | `Resize`, `GetRotationMatrix2D`, `WarpAffine` | `AplicadorFiltros` | Ampliación con IA |
+| Sombra suave del filtro | `WarpAffine`, `ExtractChannel`, `GaussianBlur` | `AplicadorFiltros` | Ampliación con IA |
+| Oscurecer el filtro si hay poca luz | `CvtColor`, `Mean` con máscara | `AplicadorFiltros` | Ampliación con IA |
 | Sacar los 21 puntos de la mano | Módulo DNN: `ReadNetFromOnnx`, `Forward` | `DetectorMano` | Ampliación con IA |
 | Dibujar recuadros y llevar la imagen a la ventana | `Rectangle`, `ToWriteableBitmap` | `Dibujante`, `MainViewModel` | Clase |
 | Entender las órdenes, filtrar por confianza (60 %) y contestar | `Choices`, `GrammarBuilder`, `SpeechSynthesizer` | `ServicioVoz`, `InterpreteOrdenes` | Clase |
 | Ventana con un interruptor por módulo y un historial | WPF con MVVM (CommunityToolkit.Mvvm) | `MainWindow`, `MainViewModel` | Clase |
+| Aspecto de la ventana (colores, letras y plantillas de los controles) | Estilos y `ControlTemplate` de WPF | `App.xaml`, `MainWindow.xaml` | Ampliación con IA |
 | Mover el ratón y hacer clic | `SetCursorPos`, `SendInput` | `ServicioRaton`, `MetodosNativos` | Ampliación con IA |
 
 ### Los filtros: «los ojos hacen de regla y de transportador»
@@ -157,6 +162,8 @@ Con los dos ojos ya tenemos todo lo necesario (`GeometriaFiltro`):
 - La **inclinación** de la línea que los une dice cuánto hay que **girarlo**.
 
 En cada PNG los ojos están siempre en las mismas coordenadas (x = 180 y x = 460), y eso es lo que usamos para encajarlo. Si en una imagen no encuentra los ojos, los colocamos con las proporciones del recuadro de la cara para que el filtro no se quede colgando. Además suavizamos la posición de los ojos entre imágenes para que el filtro no tiemble.
+
+Con **Filtro realista** encendido (ampliación con IA, `EstabilizadorFiltro`), si Haar pierde la cara una imagen suelta el filtro se queda en su sitio y se va apagando poco a poco en vez de parpadear. Además lleva una sombra suave y se oscurece si la cara tiene poca luz. Está todo explicado en [`docs/Uso-de-IA.md`](docs/Uso-de-IA.md).
 
 ### Los gestos: medir distancias entre puntos
 
@@ -185,6 +192,14 @@ En la ventana se ven en directo las tres cosas que prometimos medir:
 En el panel **Ajustes para las pruebas** se pueden cambiar en marcha el factor de escala del detector (1,1 / 1,3...), los vecinos mínimos, la confianza mínima de la voz, la zona muerta y el suavizado del cursor, para elegir cada valor con datos y no a ojo.
 
 La plantilla para apuntar los resultados está en [`docs/Pruebas.md`](docs/Pruebas.md).
+
+---
+
+## Uso de IA
+
+Seguimos la regla de la propuesta: lo de clase es la base, y lo que no vimos en clase va marcado aparte y explicado. En las tablas de arriba, la columna **Origen** dice de dónde sale cada parte. En el código, lo hecho con ayuda de IA lleva la marca `[Ampliación con uso de IA]` o `[IA]`.
+
+El detalle (qué se hizo, por qué, qué código de clase no se tocó y cómo defender cada cosa) está en [`docs/Uso-de-IA.md`](docs/Uso-de-IA.md).
 
 ---
 

@@ -70,6 +70,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ModoCabeza = _ajustes.ModoCabeza;
         MostrarAyudas = _ajustes.MostrarAyudas;
         FiltroSeleccionado = _ajustes.FiltroActual;
+        FiltroRealista = _ajustes.FiltroRealista; // [IA]
         FactorEscalaCara = _ajustes.FactorEscalaCara;
         VecinosMinimosCara = _ajustes.VecinosMinimosCara;
         ConfianzaMinimaVoz = _ajustes.ConfianzaMinimaVoz;
@@ -115,6 +116,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         [new OpcionFiltro(TipoFiltro.Ninguno, "Sin filtro"), .. CatalogoFiltros.Todos.Select(f => new OpcionFiltro(f.Tipo, f.NombreVisible))];
 
     [ObservableProperty] public partial TipoFiltro FiltroSeleccionado { get; set; }
+
+    /// <summary>
+    /// [Ampliación con uso de IA] Sombra, ajuste de luz y aparecer suave del
+    /// filtro. Se puede apagar para comparar en las pruebas.
+    /// </summary>
+    [ObservableProperty] public partial bool FiltroRealista { get; set; }
 
     // --- Voz ---
 
@@ -316,6 +323,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _ajustes.FiltroActual = value;
         Registrar(OrigenEvento.Cara, $"Filtro: {CatalogoFiltros.Nombre(value)}");
+    }
+
+    // [IA] Interruptor del filtro realista.
+    partial void OnFiltroRealistaChanged(bool value)
+    {
+        _ajustes.FiltroRealista = value;
+        Registrar(OrigenEvento.Cara, value ? "Filtro realista (sombra y luz)" : "Filtro tal cual");
     }
 
     partial void OnFactorEscalaCaraChanged(double value) => _ajustes.FactorEscalaCara = Math.Round(value, 2);

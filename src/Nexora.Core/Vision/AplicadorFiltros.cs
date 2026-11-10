@@ -4,6 +4,18 @@ using OpenCvSharp;
 namespace Nexora.Core.Vision;
 
 /// <summary>
+/// [Ampliación con uso de IA] Cómo de "realista" queremos pintar el filtro.
+/// </summary>
+/// <param name="Opacidad">0..1. La usa el <see cref="EstabilizadorFiltro"/> para que aparezca y desaparezca suave.</param>
+/// <param name="Sombra">Pintar una sombra suave debajo del filtro (para que no parezca una pegatina).</param>
+/// <param name="AjustarLuz">Oscurecer el filtro si la cara está poco iluminada (para que "viva" en la misma luz).</param>
+public readonly record struct OpcionesFiltro(double Opacidad = 1.0, bool Sombra = false, bool AjustarLuz = false)
+{
+    /// <summary>Lo de siempre: el filtro tal cual, sin sombra ni ajuste de luz.</summary>
+    public static OpcionesFiltro Basico => new(1.0, false, false);
+}
+
+/// <summary>
 /// Pega el PNG del filtro encima de la imagen de la cámara: lo escala, lo gira
 /// y lo mezcla respetando su transparencia.
 /// </summary>
@@ -57,7 +69,15 @@ public sealed class AplicadorFiltros : IDisposable
     /// <param name="ojoIzq">Ojo izquierdo de la imagen.</param>
     /// <param name="ojoDer">Ojo derecho de la imagen.</param>
     public void Aplicar(Mat imagen, TipoFiltro tipo, Point2f ojoIzq, Point2f ojoDer)
+        => Aplicar(imagen, tipo, ojoIzq, ojoDer, OpcionesFiltro.Basico);
+
+    /// <summary>
+    /// Igual que el anterior, pero con opacidad, sombra y ajuste de luz
+    /// (ver <see cref="OpcionesFiltro"/>). Los pasos 1 a 5 son los mismos.
+    /// </summary>
+    public void Aplicar(Mat imagen, TipoFiltro tipo, Point2f ojoIzq, Point2f ojoDer, OpcionesFiltro opciones)
     {
+        if (opciones.Opacidad <= 0) return;
         DefinicionFiltro? definicion = CatalogoFiltros.Buscar(tipo);
         if (definicion is null || !_imagenes.TryGetValue(tipo, out Mat? png)) return;
 
@@ -96,7 +116,18 @@ public sealed class AplicadorFiltros : IDisposable
         // 4) Para no trabajar con la imagen entera, calculamos qué recuadro de
         //    la imagen ocupa el filtro una vez girado (sus 4 esquinas) y solo
         //    tocamos ese trozo (la "región de interés").
-        Rect zona = RecuadroOcupado(m, ancho, alto) & new Rect(0, 0, imagen.Width, imagen.Height);
+        Rect zona = RecuadroOcupado(m, ancho, alto);
+
+        // [IA] La sombra se desplaza y se difumina, así que ocupa un poco más
+        // que el filtro. Agrandamos la zona para que no se corte por los bordes.
+        int desplSombra = Math.Max(2, (int)Math.Round(ancho * ProporcionDesplazamientoSombra));
+        int radioSombra = Math.Max(1, (int)Math.Round(ancho * ProporcionDifuminadoSombra));
+        if (opciones.Sombra)
+        {
+            int margen = desplSombra + radioSombra * 2;
+            zona = new Rect(zona.X - margen, zona.Y - margen, zona.Width + margen * 2, zona.Height + margen * 2);
+        }
+        zona &= new Rect(0, 0, imagen.Width, imagen.Height);
         if (zona.Width <= 0 || zona.Height <= 0) return; // el filtro cae fuera de la imagen
 
         // Pasamos la matriz a coordenadas de la zona (le restamos su esquina).
@@ -109,17 +140,129 @@ public sealed class AplicadorFiltros : IDisposable
         using var capa = new Mat();
         Cv2.WarpAffine(escalado, capa, matrizZona, zona.Size, InterpolationFlags.Linear, BorderTypes.Constant, Scalar.All(0));
 
-        // 6) Mezclamos con la imagen respetando la transparencia.
         using var trozoImagen = new Mat(imagen, zona);
-        MezclarConAlfa(trozoImagen, capa);
+
+        // [IA] 6a) Luz: si la cara está a oscuras, el filtro también.
+        if (opciones.AjustarLuz)
+        {
+            AjustarALaLuz(trozoImagen, capa);
+        }
+
+        // [IA] 6b) Sombra: el mismo PNG, un poco más abajo, borroso y oscuro.
+        if (opciones.Sombra)
+        {
+            PintarSombra(trozoImagen, escalado, matrizZona, desplSombra, radioSombra, opciones.Opacidad);
+        }
+
+        // 6) Mezclamos con la imagen respetando la transparencia.
+        MezclarConAlfa(trozoImagen, capa, opciones.Opacidad);
     }
+
+    // [IA] Tamaño de la sombra, como fracción del ancho del filtro. Así la
+    // sombra crece y encoge con la cara, igual que el propio filtro.
+    private const double ProporcionDesplazamientoSombra = 0.018;
+    private const double ProporcionDifuminadoSombra = 0.025;
+
+    /// <summary>Cuánto oscurece la sombra como mucho (0 = nada, 1 = negro).</summary>
+    private const double IntensidadSombra = 0.38;
+
+    /// <summary>
+    /// Brillo de referencia (0..255) de una cara "bien iluminada". Con este
+    /// brillo o más el filtro se queda con sus colores originales.
+    /// </summary>
+    private const double BrilloReferencia = 135;
+
+    /// <summary>
+    /// [Ampliación con uso de IA] Sombra suave debajo del filtro.
+    /// </summary>
+    /// <remarks>
+    /// Es el truco de siempre en diseño: una sombra separa el objeto del fondo
+    /// y hace que parezca que está "encima" de la cara y no pintado sobre ella.
+    /// <list type="number">
+    ///   <item><c>WarpAffine</c> otra vez con la misma matriz, pero bajando el PNG
+    ///   unos píxeles (la luz suele venir de arriba).</item>
+    ///   <item>Nos quedamos solo con su alfa (la "silueta").</item>
+    ///   <item><c>GaussianBlur</c> para que el borde de la sombra sea suave.</item>
+    ///   <item>Oscurecemos la imagen ahí: <c>fondo · (1 − intensidad · silueta)</c>.</item>
+    /// </list>
+    /// </remarks>
+    private static void PintarSombra(Mat fondo, Mat escalado, Mat matrizZona, int desplazamiento, int radio, double opacidad)
+    {
+        using var matrizSombra = matrizZona.Clone();
+        matrizSombra.Set(1, 2, matrizZona.At<double>(1, 2) + desplazamiento);
+
+        using var capaSombra = new Mat();
+        Cv2.WarpAffine(escalado, capaSombra, matrizSombra, fondo.Size(), InterpolationFlags.Linear, BorderTypes.Constant, Scalar.All(0));
+
+        using var silueta = new Mat();
+        Cv2.ExtractChannel(capaSombra, silueta, 3);
+        silueta.ConvertTo(silueta, MatType.CV_32FC1, IntensidadSombra * opacidad / 255.0);
+
+        int lado = radio * 2 + 1; // GaussianBlur pide un tamaño impar
+        Cv2.GaussianBlur(silueta, silueta, new Size(lado, lado), 0);
+
+        // factor = 1 − sombra, repetido en los 3 canales para multiplicar.
+        using var factor = new Mat();
+        Cv2.Subtract(Scalar.All(1.0), silueta, factor);
+        using var factor3 = new Mat();
+        Cv2.Merge([factor, factor, factor], factor3);
+
+        using var fondoF = new Mat();
+        fondo.ConvertTo(fondoF, MatType.CV_32FC3);
+        Cv2.Multiply(fondoF, factor3, fondoF);
+        fondoF.ConvertTo(fondo, MatType.CV_8UC3);
+    }
+
+    /// <summary>
+    /// [Ampliación con uso de IA] Oscurece el color del filtro si la zona de la
+    /// cara donde va está poco iluminada.
+    /// </summary>
+    /// <remarks>
+    /// Sin esto, con poca luz la cara se ve oscura y el filtro brillante, y
+    /// se nota mucho que está "pegado". Medimos el brillo medio
+    /// (<c>CvtColor</c> a gris + <c>Mean</c>) justo debajo del filtro y
+    /// multiplicamos sus colores por un factor entre 0,55 y 1. Usamos la raíz
+    /// cuadrada para que el cambio sea suave y el filtro nunca se vuelva negro.
+    /// El canal alfa no se toca.
+    /// </remarks>
+    private static void AjustarALaLuz(Mat fondo, Mat capa)
+    {
+        using var gris = new Mat();
+        Cv2.CvtColor(fondo, gris, ColorConversionCodes.BGR2GRAY);
+
+        // Solo cuenta lo que está debajo del filtro (alfa > 0).
+        using var mascara = new Mat();
+        Cv2.ExtractChannel(capa, mascara, 3);
+        Cv2.Threshold(mascara, mascara, 0, 255, ThresholdTypes.Binary);
+        if (Cv2.CountNonZero(mascara) == 0) return;
+
+        double brillo = Cv2.Mean(gris, mascara).Val0;
+        double factor = FactorLuz(brillo);
+        if (factor >= 0.999) return;
+
+        // Multiplicamos B, G y R; el alfa se queda igual (factor 1).
+        Cv2.Multiply(capa, new Scalar(factor, factor, factor, 1.0), capa);
+    }
+
+    /// <summary>
+    /// [IA] Factor por el que multiplicar el color del filtro según el brillo
+    /// medio (0..255) de la cara. Público para poder probarlo en los tests.
+    /// </summary>
+    public static double FactorLuz(double brillo)
+        => Math.Sqrt(Math.Clamp(brillo / BrilloReferencia, 0.30, 1.0));
 
     /// <summary>
     /// Mezcla una capa BGRA encima de un trozo de imagen BGR usando su canal alfa.
     /// </summary>
     /// <param name="fondo">Trozo de la imagen de la cámara (BGR, 3 canales). Se modifica.</param>
     /// <param name="capa">El filtro ya girado (BGRA, 4 canales) del mismo tamaño.</param>
-    public static void MezclarConAlfa(Mat fondo, Mat capa)
+    public static void MezclarConAlfa(Mat fondo, Mat capa) => MezclarConAlfa(fondo, capa, 1.0);
+
+    /// <summary>
+    /// Igual que el anterior, pero multiplicando el alfa por <paramref name="opacidad"/>
+    /// (0..1). [IA] Lo usa el estabilizador para el aparecer/desaparecer suave.
+    /// </summary>
+    public static void MezclarConAlfa(Mat fondo, Mat capa, double opacidad)
     {
         // Separamos los 4 canales del PNG: azul, verde, rojo y alfa.
         Mat[] canales = Cv2.Split(capa);
@@ -130,7 +273,7 @@ public sealed class AplicadorFiltros : IDisposable
 
             // Alfa de 0..255 a 0..1 y repetido en 3 canales para multiplicar fácil.
             using var alfa = new Mat();
-            canales[3].ConvertTo(alfa, MatType.CV_32FC1, 1.0 / 255.0);
+            canales[3].ConvertTo(alfa, MatType.CV_32FC1, Math.Clamp(opacidad, 0, 1) / 255.0);
             using var alfa3 = new Mat();
             Cv2.Merge([alfa, alfa, alfa], alfa3);
 

@@ -20,7 +20,7 @@ Rellenar antes de empezar, porque los resultados cambian mucho según esto.
 
 ## 1. Fluidez (imágenes por segundo)
 
-Dejar el programa unos 30 segundos en cada caso y apuntar lo que pone en **FLUIDEZ (FPS)** y **PROCESO POR IMAGEN**.
+Dejar el programa unos 30 segundos en cada caso y apuntar lo que pone en **Imágenes por segundo** y **Proceso por imagen**.
 
 | Módulos encendidos | FPS | ms por imagen |
 |---|---|---|
@@ -29,11 +29,15 @@ Dejar el programa unos 30 segundos en cada caso y apuntar lo que pone en **FLUID
 | Solo control gestual (mano) | | |
 | Solo plan B (cabeza) | | |
 | Filtros + mano + voz (los tres a la vez) | | |
+| Solo filtros, con **Filtro realista** apagado | | |
+| Solo filtros, con **Filtro realista** encendido | | |
+
+> La sombra y el ajuste de luz (ampliación con IA) añaden algo de trabajo por imagen. Con las dos últimas filas se ve si se nota en los FPS.
 
 ## 2. Tiempo de respuesta
 
-**Gestos**: el valor de **RESPUESTA GESTO** (desde que se empieza a ver el gesto hasta que se confirma). También sale en el historial entre paréntesis.
-**Voz**: el valor de **RESPUESTA VOZ** (desde que terminamos de hablar hasta que llega la orden).
+**Gestos**: el valor de **Respuesta del gesto** (desde que se empieza a ver el gesto hasta que se confirma). También sale en el historial entre paréntesis.
+**Voz**: el valor de **Respuesta de la voz** (desde que terminamos de hablar hasta que llega la orden).
 
 | Acción | Intento 1 | Intento 2 | Intento 3 | Intento 4 | Intento 5 | Media |
 |---|---|---|---|---|---|---|
@@ -77,6 +81,8 @@ Repetir cada gesto y cada orden **10 veces** y contar cuántas sale bien. Apunta
 | Con gafas de verdad | | | |
 | Poca luz | | | |
 | Dos personas delante | | | |
+| Tapar la cara un momento con la mano (¿parpadea el filtro?) | | | |
+| Poca luz, con **Filtro realista** apagado y encendido | | | |
 
 ---
 
