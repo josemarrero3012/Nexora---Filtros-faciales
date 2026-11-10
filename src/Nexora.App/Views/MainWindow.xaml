@@ -8,6 +8,14 @@
         orden de voz, los ajustes del detector y el historial de eventos.
 
     Aquí no hay lógica: todo son Binding al MainViewModel (MVVM).
+
+    [Ampliación con uso de IA] Rediseño visual (ver docs/Uso-de-IA.md y los
+    comentarios de App.xaml). Los Binding son EXACTAMENTE los mismos que antes
+    (más uno nuevo, FiltroRealista); solo cambia cómo se ve:
+      - La cámara es un visor con marcas en las esquinas, como el de una cámara de fotos.
+      - Las medidas van en una sola barra debajo del visor, con números grandes.
+      - El panel derecho es una sola columna con líneas finas, no tarjetas sueltas.
+      - Los filtros se eligen viendo su dibujo, no solo el nombre.
 -->
 <Window x:Class="Nexora.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -18,65 +26,82 @@
         xmlns:modelos="clr-namespace:Nexora.Core.Modelos;assembly=Nexora.Core"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="Nexora · Visión artificial y voz"
-        Width="1360" Height="860" MinWidth="1100" MinHeight="720"
+        Title="Nexora"
+        Width="1360" Height="880" MinWidth="1100" MinHeight="720"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource FondoBrush}"
-        Foreground="{StaticResource TextoBrush}"
-        FontFamily="Segoe UI">
+        Foreground="{StaticResource TintaBrush}"
+        FontFamily="{StaticResource LetraTexto}"
+        TextOptions.TextFormattingMode="Display">
 
-    <Grid Margin="18">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="18" />
-            <ColumnDefinition Width="400" />
+            <ColumnDefinition Width="392" />
         </Grid.ColumnDefinitions>
 
-        <!-- ===================== Cabecera ===================== -->
-        <Grid Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,14">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Nexora" FontSize="26" FontWeight="Bold" />
-                <TextBlock Text="  ·  manos, cara y voz para manejar el ordenador" FontSize="14"
-                           Foreground="{StaticResource TextoSuaveBrush}" VerticalAlignment="Bottom" Margin="0,0,0,4" />
-            </StackPanel>
+        <!-- ===================== Izquierda: cámara y medidas ===================== -->
+        <Grid Grid.Column="0" Margin="28,22,28,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <!-- Estado de la cámara (punto verde o rojo) -->
-            <Border HorizontalAlignment="Right" CornerRadius="12" Padding="10,4"
-                    Background="{StaticResource TarjetaBrush}" BorderBrush="{StaticResource BordeBrush}" BorderThickness="1">
-                <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="9" Height="9" Margin="0,0,7,0" VerticalAlignment="Center">
+            <!-- Cabecera: nombre y estado de la cámara -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,16" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock Text="Nexora" FontFamily="{StaticResource LetraTitulos}" FontSize="30"
+                               FontWeight="SemiBold" VerticalAlignment="Bottom" />
+                    <TextBlock Text="Manejar el ordenador con la mano, la cara y la voz" FontSize="13"
+                               Foreground="{StaticResource TintaSuaveBrush}"
+                               VerticalAlignment="Bottom" Margin="14,0,0,6" />
+                </StackPanel>
+
+                <!-- Piloto de la cámara: rojo "grabando" cuando hay imagen, gris si no -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,6">
+                    <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="{StaticResource RojoBrush}" />
+                                <Setter Property="Fill" Value="{StaticResource LineaBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding CamaraFuncionando}" Value="True">
-                                        <Setter Property="Fill" Value="{StaticResource VerdeBrush}" />
+                                        <Setter Property="Fill" Value="{StaticResource DirectoBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </Ellipse.Style>
                     </Ellipse>
-                    <TextBlock Text="{Binding EstadoCamara}" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding EstadoCamara}" FontSize="13" VerticalAlignment="Center" />
                 </StackPanel>
-            </Border>
-        </Grid>
+            </DockPanel>
 
-        <!-- ===================== Columna izquierda: cámara ===================== -->
-        <Grid Grid.Row="1" Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <!-- Imagen de la cámara -->
-            <Border Grid.Row="0" Background="Black" CornerRadius="12" ClipToBounds="True"
-                    BorderBrush="{StaticResource BordeBrush}" BorderThickness="1">
+            <!-- Visor de la cámara -->
+            <Border Grid.Row="1" Background="Black" CornerRadius="6" ClipToBounds="True">
                 <Grid>
                     <Image Source="{Binding ImagenCamara}" Stretch="Uniform" RenderOptions.BitmapScalingMode="LowQuality" />
+
+                    <!-- Marcas de las esquinas, como en el visor de una cámara -->
+                    <Grid Margin="16" IsHitTestVisible="False">
+                        <Grid.Resources>
+                            <Style TargetType="Path">
+                                <Setter Property="Data" Value="M 0 22 L 0 0 L 22 0" />
+                                <Setter Property="Stroke" Value="{StaticResource SobreVideoBrush}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                                <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                            </Style>
+                        </Grid.Resources>
+                        <Path HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <Path HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Path.RenderTransform><ScaleTransform ScaleX="-1" /></Path.RenderTransform>
+                        </Path>
+                        <Path HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                            <Path.RenderTransform><ScaleTransform ScaleY="-1" /></Path.RenderTransform>
+                        </Path>
+                        <Path HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <Path.RenderTransform><ScaleTransform ScaleX="-1" ScaleY="-1" /></Path.RenderTransform>
+                        </Path>
+                    </Grid>
 
                     <!-- Mensaje mientras no llega ninguna imagen -->
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -90,15 +115,17 @@
                                 </Style.Triggers>
                             </Style>
                         </StackPanel.Style>
-                        <TextBlock Text="{Binding EstadoCamara}" FontSize="16" HorizontalAlignment="Center"
-                                   Foreground="{StaticResource TextoSuaveBrush}" />
+                        <TextBlock Text="{Binding EstadoCamara}" FontFamily="{StaticResource LetraTitulos}" FontSize="20"
+                                   Foreground="White" HorizontalAlignment="Center" />
+                        <TextBlock Text="Si otra aplicación está usando la webcam, ciérrala y vuelve a abrirla aquí."
+                                   FontSize="13" Foreground="#B3FFFFFF" HorizontalAlignment="Center" Margin="0,6,0,0" />
                         <Button Content="Volver a abrir la cámara" Command="{Binding ReiniciarCamaraCommand}"
-                                Style="{StaticResource BotonPlano}" Margin="0,12,0,0" HorizontalAlignment="Center" />
+                                Style="{StaticResource BotonSobreVideo}" Margin="0,18,0,0" HorizontalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Aviso grande cuando el programa pregunta antes de salir -->
-                    <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,16,0,0"
-                            Background="{StaticResource AmbarBrush}" CornerRadius="8" Padding="14,8">
+                    <!-- Aviso cuando el programa pregunta antes de salir -->
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,22,0,0"
+                            Background="{StaticResource VozBrush}" CornerRadius="4" Padding="16,9">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -109,194 +136,229 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <TextBlock Text="¿Seguro que quieres salir? Di «sí» o «no»" FontWeight="SemiBold"
-                                   Foreground="{StaticResource FondoBrush}" />
+                        <TextBlock Text="¿Seguro que quieres salir? Di «sí» o «no»" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="White" />
                     </Border>
                 </Grid>
             </Border>
 
-            <!-- Rendimiento: lo que vamos a medir en las pruebas -->
-            <UniformGrid Grid.Row="1" Columns="5" Margin="0,12,0,0">
-                <UniformGrid.Resources>
-                    <Style TargetType="Border" BasedOn="{StaticResource Tarjeta}">
-                        <Setter Property="Margin" Value="0,0,10,0" />
-                        <Setter Property="Padding" Value="12,8" />
+            <!-- Barra de medidas: lo que vamos a medir en las pruebas -->
+            <Grid Grid.Row="2" Margin="0,18,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.Resources>
+                    <!-- Cada medida con una línea fina a la izquierda que la separa de la anterior -->
+                    <Style TargetType="Border">
+                        <Setter Property="BorderBrush" Value="{StaticResource LineaBrush}" />
+                        <Setter Property="BorderThickness" Value="1,0,0,0" />
+                        <Setter Property="Padding" Value="16,0,8,0" />
                     </Style>
-                </UniformGrid.Resources>
-                <Border>
+                </Grid.Resources>
+
+                <Border Grid.Column="0" BorderThickness="0" Padding="0,0,8,0">
                     <StackPanel>
-                        <TextBlock Text="GESTO" Style="{StaticResource TituloTarjeta}" Margin="0,0,0,2" />
-                        <TextBlock Text="{Binding GestoActual}" FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{StaticResource AcentoBrush}" />
+                        <TextBlock Text="Gesto" Style="{StaticResource EtiquetaMedida}" />
+                        <TextBlock Text="{Binding GestoActual}" Style="{StaticResource ValorMedida}"
+                                   Foreground="{StaticResource ManoBrush}" FontWeight="SemiBold" />
                     </StackPanel>
                 </Border>
-                <Border>
+                <Border Grid.Column="1">
                     <StackPanel>
-                        <TextBlock Text="FLUIDEZ (FPS)" Style="{StaticResource TituloTarjeta}" Margin="0,0,0,2" />
-                        <TextBlock Text="{Binding Fps}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Imágenes por segundo" Style="{StaticResource EtiquetaMedida}" />
+                        <TextBlock Text="{Binding Fps}" Style="{StaticResource ValorMedida}" />
                     </StackPanel>
                 </Border>
-                <Border>
+                <Border Grid.Column="2">
                     <StackPanel>
-                        <TextBlock Text="PROCESO POR IMAGEN" Style="{StaticResource TituloTarjeta}" Margin="0,0,0,2" />
-                        <TextBlock Text="{Binding MsPorImagen}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Proceso por imagen" Style="{StaticResource EtiquetaMedida}" />
+                        <TextBlock Text="{Binding MsPorImagen}" Style="{StaticResource ValorMedida}" />
                     </StackPanel>
                 </Border>
-                <Border>
+                <Border Grid.Column="3">
                     <StackPanel>
-                        <TextBlock Text="RESPUESTA GESTO" Style="{StaticResource TituloTarjeta}" Margin="0,0,0,2" />
-                        <TextBlock Text="{Binding RespuestaGesto}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Respuesta del gesto" Style="{StaticResource EtiquetaMedida}" />
+                        <TextBlock Text="{Binding RespuestaGesto}" Style="{StaticResource ValorMedida}" />
                     </StackPanel>
                 </Border>
-                <Border Margin="0">
+                <Border Grid.Column="4">
                     <StackPanel>
-                        <TextBlock Text="RESPUESTA VOZ" Style="{StaticResource TituloTarjeta}" Margin="0,0,0,2" />
-                        <TextBlock Text="{Binding RespuestaVoz}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="Respuesta de la voz" Style="{StaticResource EtiquetaMedida}" />
+                        <TextBlock Text="{Binding RespuestaVoz}" Style="{StaticResource ValorMedida}" />
                     </StackPanel>
                 </Border>
-            </UniformGrid>
+            </Grid>
         </Grid>
 
-        <!-- ===================== Columna derecha: controles e historial ===================== -->
-        <Grid Grid.Row="1" Grid.Column="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+        <!-- ===================== Derecha: controles e historial ===================== -->
+        <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineaBrush}" BorderThickness="1,0,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" MaxHeight="560" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="520">
-                <StackPanel>
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
 
-                    <!-- Módulos: un interruptor por cada uno -->
-                    <Border Style="{StaticResource Tarjeta}">
-                        <StackPanel>
-                            <TextBlock Text="MÓDULOS" Style="{StaticResource TituloTarjeta}" />
+                        <!-- Módulos: un interruptor por cada uno, con el color de su módulo -->
+                        <Border Style="{StaticResource Seccion}">
+                            <StackPanel>
+                                <TextBlock Text="Módulos" Style="{StaticResource TituloSeccion}" />
 
-                            <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding FiltrosActivos}">
-                                <StackPanel>
-                                    <TextBlock Text="Filtros faciales" FontWeight="SemiBold" />
-                                    <TextBlock Text="Cara y ojos con Haar Cascade" Style="{StaticResource TextoSuave}" />
-                                </StackPanel>
-                            </CheckBox>
+                                <CheckBox Style="{StaticResource Interruptor}" Tag="{StaticResource CaraBrush}"
+                                          IsChecked="{Binding FiltrosActivos}">
+                                    <StackPanel>
+                                        <TextBlock Text="Filtros faciales" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Busca la cara y los ojos con Haar Cascade" Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
 
-                            <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding ControlGestualActivo}">
-                                <StackPanel>
-                                    <TextBlock Text="Control gestual" FontWeight="SemiBold" />
-                                    <TextBlock Text="Mueve el ratón de verdad (puño = pausa)" Style="{StaticResource TextoSuave}" />
-                                </StackPanel>
-                            </CheckBox>
+                                <CheckBox Style="{StaticResource Interruptor}" Tag="{StaticResource ManoBrush}"
+                                          IsChecked="{Binding ControlGestualActivo}">
+                                    <StackPanel>
+                                        <TextBlock Text="Control gestual" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Mueve el ratón de verdad. Cierra el puño para pausar." Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
 
-                            <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding VozActiva}">
-                                <StackPanel>
-                                    <TextBlock Text="Órdenes de voz" FontWeight="SemiBold" />
-                                    <TextBlock Text="System.Speech en español" Style="{StaticResource TextoSuave}" />
-                                </StackPanel>
-                            </CheckBox>
+                                <CheckBox Style="{StaticResource Interruptor}" Tag="{StaticResource VozBrush}"
+                                          IsChecked="{Binding VozActiva}">
+                                    <StackPanel>
+                                        <TextBlock Text="Órdenes de voz" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Escucha las órdenes en español" Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
 
-                            <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding ModoCabeza}">
-                                <StackPanel>
-                                    <TextBlock Text="Plan B: cursor con la cabeza" FontWeight="SemiBold" />
-                                    <TextBlock Text="Zona muerta como en clase y clic diciendo «clic»" Style="{StaticResource TextoSuave}" />
-                                </StackPanel>
-                            </CheckBox>
+                                <CheckBox Style="{StaticResource Interruptor}" Tag="{StaticResource CaraBrush}"
+                                          IsChecked="{Binding ModoCabeza}">
+                                    <StackPanel>
+                                        <TextBlock Text="Plan B: cursor con la cabeza" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Zona muerta como en clase; el clic se hace diciendo «clic»" Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
 
-                            <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding MostrarAyudas}">
-                                <StackPanel>
-                                    <TextBlock Text="Mostrar ayudas" FontWeight="SemiBold" />
-                                    <TextBlock Text="Recuadros, ojos y puntos de la mano" Style="{StaticResource TextoSuave}" />
-                                </StackPanel>
-                            </CheckBox>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Filtro elegido -->
-                    <Border Style="{StaticResource Tarjeta}">
-                        <StackPanel>
-                            <TextBlock Text="FILTRO" Style="{StaticResource TituloTarjeta}" />
-                            <ListBox ItemsSource="{Binding Filtros}"
-                                     SelectedValuePath="Tipo"
-                                     SelectedValue="{Binding FiltroSeleccionado}"
-                                     ItemContainerStyle="{StaticResource PastillaFiltro}"
-                                     Background="Transparent" BorderThickness="0"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                            </ListBox>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Última orden de voz -->
-                    <Border Style="{StaticResource Tarjeta}">
-                        <StackPanel>
-                            <TextBlock Text="ÚLTIMA ORDEN DE VOZ" Style="{StaticResource TituloTarjeta}" />
-                            <TextBlock Text="{Binding UltimaOrdenVoz}" FontSize="16" FontWeight="SemiBold"
-                                       Foreground="{StaticResource AmbarBrush}" />
-                            <TextBlock Text="{Binding DetalleUltimaOrden}" Style="{StaticResource TextoSuave}" Margin="0,2,0,8" />
-                            <TextBlock Text="{Binding FrasesDisponibles}" Style="{StaticResource TextoSuave}" FontSize="11" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Ajustes del detector: para probar valores y elegirlos con datos -->
-                    <Border Style="{StaticResource Tarjeta}">
-                        <Expander Foreground="{StaticResource TextoBrush}">
-                            <Expander.Header>
-                                <TextBlock Text="AJUSTES PARA LAS PRUEBAS" Style="{StaticResource TituloTarjeta}" Margin="0" />
-                            </Expander.Header>
-                            <StackPanel Margin="0,6,0,0">
-                                <TextBlock Style="{StaticResource EtiquetaAjuste}">
-                                    <Run Text="Factor de escala de la cara: " /><Run Text="{Binding FactorEscalaCara, StringFormat=0.00, Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
-                                <Slider Minimum="1.05" Maximum="1.5" TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                        Value="{Binding FactorEscalaCara}" />
-
-                                <TextBlock Style="{StaticResource EtiquetaAjuste}">
-                                    <Run Text="Vecinos mínimos: " /><Run Text="{Binding VecinosMinimosCara, Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
-                                <Slider Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
-                                        Value="{Binding VecinosMinimosCara}" />
-
-                                <TextBlock Style="{StaticResource EtiquetaAjuste}">
-                                    <Run Text="Confianza mínima de la voz: " /><Run Text="{Binding ConfianzaMinimaVoz, StringFormat=P0, Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
-                                <Slider Minimum="0.3" Maximum="0.95" TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                        Value="{Binding ConfianzaMinimaVoz}" />
-
-                                <TextBlock Style="{StaticResource EtiquetaAjuste}">
-                                    <Run Text="Zona muerta del cursor: " /><Run Text="{Binding ZonaMuertaPx, StringFormat='{}{0:0} px', Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
-                                <Slider Minimum="0" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True"
-                                        Value="{Binding ZonaMuertaPx}" />
-
-                                <TextBlock Style="{StaticResource EtiquetaAjuste}">
-                                    <Run Text="Suavizado del cursor: " /><Run Text="{Binding SuavizadoCursor, StringFormat=0.00, Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
-                                <Slider Minimum="0.1" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
-                                        Value="{Binding SuavizadoCursor}" />
+                                <CheckBox Style="{StaticResource Interruptor}" IsChecked="{Binding MostrarAyudas}">
+                                    <StackPanel>
+                                        <TextBlock Text="Mostrar ayudas en la imagen" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Recuadros, ojos y puntos de la mano" Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
                             </StackPanel>
-                        </Expander>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+                        </Border>
 
-            <!-- Historial de eventos: hora, origen (mano, cara o voz) y acción -->
-            <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Margin="0">
-                <Grid>
+                        <!-- Filtro elegido -->
+                        <Border Style="{StaticResource Seccion}">
+                            <StackPanel>
+                                <TextBlock Text="Filtro" Style="{StaticResource TituloSeccion}" />
+                                <ListBox ItemsSource="{Binding Filtros}"
+                                         SelectedValuePath="Tipo"
+                                         SelectedValue="{Binding FiltroSeleccionado}"
+                                         ItemContainerStyle="{StaticResource BaldosaFiltro}"
+                                         Background="Transparent" BorderThickness="0" Margin="0,0,-8,0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         KeyboardNavigation.DirectionalNavigation="Cycle">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4" />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                </ListBox>
+
+                                <!-- [IA] Para comparar el filtro "tal cual" con el nuevo en las pruebas -->
+                                <CheckBox Style="{StaticResource Interruptor}" Tag="{StaticResource CaraBrush}"
+                                          IsChecked="{Binding FiltroRealista}" Margin="0,14,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Filtro realista" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="Sombra suave, se adapta a la luz y no parpadea si se pierde la cara un momento"
+                                                   Style="{StaticResource TextoSuave}" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Última orden de voz -->
+                        <Border Style="{StaticResource Seccion}">
+                            <StackPanel>
+                                <TextBlock Text="Voz" Style="{StaticResource TituloSeccion}" />
+                                <Border BorderBrush="{StaticResource VozBrush}" BorderThickness="3,0,0,0" Padding="12,2,0,2">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding UltimaOrdenVoz}" FontFamily="{StaticResource LetraTitulos}"
+                                                   FontSize="20" Foreground="{StaticResource TintaBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding DetalleUltimaOrden}" Style="{StaticResource TextoSuave}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Style="{StaticResource TextoSuave}" Margin="0,12,0,0" LineHeight="18">
+                                    <Run Text="Puedes decir " /><Run Text="{Binding FrasesDisponibles, Mode=OneWay}" Foreground="{StaticResource TintaBrush}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ajustes del detector: para probar valores y elegirlos con datos -->
+                        <Border Style="{StaticResource Seccion}">
+                            <Expander Style="{StaticResource Desplegable}">
+                                <Expander.Header>
+                                    <StackPanel>
+                                        <TextBlock Text="Ajustes para las pruebas" Style="{StaticResource TituloSeccion}" Margin="0" />
+                                        <TextBlock Text="Cambia los valores en marcha y compara los resultados" Style="{StaticResource TextoSuave}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <StackPanel Margin="0,4,0,0">
+                                    <TextBlock Style="{StaticResource EtiquetaAjuste}">
+                                        <Run Text="Factor de escala de la cara: " /><Run Text="{Binding FactorEscalaCara, StringFormat=0.00, Mode=OneWay}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Slider Minimum="1.05" Maximum="1.5" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                            Value="{Binding FactorEscalaCara}" />
+
+                                    <TextBlock Style="{StaticResource EtiquetaAjuste}">
+                                        <Run Text="Vecinos mínimos: " /><Run Text="{Binding VecinosMinimosCara, Mode=OneWay}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Slider Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding VecinosMinimosCara}" />
+
+                                    <TextBlock Style="{StaticResource EtiquetaAjuste}">
+                                        <Run Text="Confianza mínima de la voz: " /><Run Text="{Binding ConfianzaMinimaVoz, StringFormat=P0, Mode=OneWay}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Slider Minimum="0.3" Maximum="0.95" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                            Value="{Binding ConfianzaMinimaVoz}" />
+
+                                    <TextBlock Style="{StaticResource EtiquetaAjuste}">
+                                        <Run Text="Zona muerta del cursor: " /><Run Text="{Binding ZonaMuertaPx, StringFormat='{}{0:0} px', Mode=OneWay}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Slider Minimum="0" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding ZonaMuertaPx}" />
+
+                                    <TextBlock Style="{StaticResource EtiquetaAjuste}">
+                                        <Run Text="Suavizado del cursor: " /><Run Text="{Binding SuavizadoCursor, StringFormat=0.00, Mode=OneWay}" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Slider Minimum="0.1" Maximum="1" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                            Value="{Binding SuavizadoCursor}" />
+                                </StackPanel>
+                            </Expander>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Historial de eventos: hora, origen (mano, cara o voz) y acción -->
+                <Grid Grid.Row="1" Margin="22,18,10,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                    <DockPanel Grid.Row="0" Margin="0,0,12,10">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                             <Button Content="Exportar CSV" Command="{Binding ExportarHistorialCommand}"
-                                    Style="{StaticResource BotonPlano}" Padding="8,3" FontSize="11" Margin="0,0,6,0" />
+                                    Style="{StaticResource BotonPlano}" Padding="10,4" Margin="0,0,6,0" />
                             <Button Content="Limpiar" Command="{Binding LimpiarHistorialCommand}"
-                                    Style="{StaticResource BotonPlano}" Padding="8,3" FontSize="11" />
+                                    Style="{StaticResource BotonPlano}" Padding="10,4" />
                         </StackPanel>
-                        <TextBlock Text="HISTORIAL" Style="{StaticResource TituloTarjeta}" Margin="0" VerticalAlignment="Center" />
+                        <TextBlock Text="Historial" Style="{StaticResource TituloSeccion}" Margin="0" VerticalAlignment="Center" />
                     </DockPanel>
 
                     <ListBox Grid.Row="1" ItemsSource="{Binding Historial}"
@@ -305,7 +367,7 @@
                              VirtualizingPanel.IsVirtualizing="True">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
-                                <Setter Property="Padding" Value="0,3" />
+                                <Setter Property="Padding" Value="0,4,10,4" />
                                 <Setter Property="Focusable" Value="False" />
                                 <Setter Property="Template">
                                     <Setter.Value>
@@ -320,44 +382,43 @@
                             <DataTemplate DataType="{x:Type modelos:EventoNexora}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="62" />
-                                        <ColumnDefinition Width="66" />
+                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="64" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding HoraTexto}" FontFamily="Consolas" FontSize="12"
-                                               Foreground="{StaticResource TextoSuaveBrush}" VerticalAlignment="Top" />
+                                    <TextBlock Text="{Binding HoraTexto}" FontFamily="{StaticResource LetraTitulos}" FontSize="12"
+                                               Foreground="{StaticResource TintaSuaveBrush}" VerticalAlignment="Top" />
 
-                                    <!-- Etiqueta de color según el origen -->
-                                    <Border Grid.Column="1" CornerRadius="4" Padding="5,1" Margin="0,0,8,0"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="{StaticResource BordeBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Mano}">
-                                                        <Setter Property="Background" Value="{StaticResource AcentoBrush}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Cara}">
-                                                        <Setter Property="Background" Value="{StaticResource MoradoBrush}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Voz}">
-                                                        <Setter Property="Background" Value="{StaticResource AmbarBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <TextBlock Text="{Binding Origen}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource FondoBrush}" />
-                                    </Border>
+                                    <!-- Origen: un cuadradito y el nombre, con el color de su módulo -->
+                                    <StackPanel x:Name="Origen" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Rectangle x:Name="Marca" Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                   Fill="{StaticResource TintaSuaveBrush}" />
+                                        <TextBlock x:Name="NombreOrigen" Text="{Binding Origen}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TintaSuaveBrush}" />
+                                    </StackPanel>
 
                                     <TextBlock Grid.Column="2" Text="{Binding Accion}" FontSize="12" TextWrapping="Wrap"
-                                               Foreground="{StaticResource TextoBrush}" />
+                                               Foreground="{StaticResource TintaBrush}" />
                                 </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Mano}">
+                                        <Setter TargetName="Marca" Property="Fill" Value="{StaticResource ManoBrush}" />
+                                        <Setter TargetName="NombreOrigen" Property="Foreground" Value="{StaticResource ManoBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Cara}">
+                                        <Setter TargetName="Marca" Property="Fill" Value="{StaticResource CaraBrush}" />
+                                        <Setter TargetName="NombreOrigen" Property="Foreground" Value="{StaticResource CaraBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Origen}" Value="{x:Static modelos:OrigenEvento.Voz}">
+                                        <Setter TargetName="Marca" Property="Fill" Value="{StaticResource VozBrush}" />
+                                        <Setter TargetName="NombreOrigen" Property="Foreground" Value="{StaticResource VozBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </Grid>
-            </Border>
-        </Grid>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

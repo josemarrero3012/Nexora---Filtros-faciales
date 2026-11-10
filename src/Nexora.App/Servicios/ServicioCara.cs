@@ -32,6 +32,10 @@ public sealed class ServicioCara : IDisposable
     private readonly SuavizadorPunto _ojoIzquierdo = new();
     private readonly SuavizadorPunto _ojoDerecho = new();
 
+    // [Ampliación con uso de IA] Para que el filtro no parpadee cuando Haar
+    // pierde la cara una imagen suelta (ver EstabilizadorFiltro).
+    private readonly EstabilizadorFiltro _estabilizador = new();
+
     private bool _hayCara;
     private int _imagenesSinCara;
 
@@ -66,6 +70,9 @@ public sealed class ServicioCara : IDisposable
                 _ojoDerecho.Reiniciar();
                 Avisar("Cara perdida");
             }
+
+            // [IA] Sin cara en esta imagen: el filtro se queda donde estaba y se va apagando.
+            PintarFiltro(imagen, _estabilizador.Actualizar(false, default, default));
             return null;
         }
 
@@ -83,7 +90,9 @@ public sealed class ServicioCara : IDisposable
 
         if (_ajustes.FiltrosActivos)
         {
-            _aplicador.Aplicar(imagen, _ajustes.FiltroActual, izq, der);
+            // [IA] Antes: _aplicador.Aplicar(imagen, _ajustes.FiltroActual, izq, der);
+            // Ahora pasamos por el estabilizador para que aparezca suave.
+            PintarFiltro(imagen, _estabilizador.Actualizar(true, izq, der));
         }
 
         if (_ajustes.MostrarAyudas)
@@ -92,6 +101,32 @@ public sealed class ServicioCara : IDisposable
         }
 
         return cara;
+    }
+
+    /// <summary>
+    /// [Ampliación con uso de IA] Pinta el filtro con lo que diga el
+    /// estabilizador. Con «Filtro realista» apagado se pinta como siempre
+    /// (sin sombra, sin ajuste de luz y sin aparecer suave).
+    /// </summary>
+    private void PintarFiltro(Mat imagen, EstadoFiltro estado)
+    {
+        if (!_ajustes.FiltrosActivos)
+        {
+            _estabilizador.Reiniciar();
+            return;
+        }
+
+        if (!_ajustes.FiltroRealista)
+        {
+            // Modo "tal cual": solo cuando hay cara de verdad, como antes.
+            if (_hayCara && _imagenesSinCara == 0)
+                _aplicador.Aplicar(imagen, _ajustes.FiltroActual, estado.OjoIzquierdo, estado.OjoDerecho);
+            return;
+        }
+
+        if (!estado.Dibujar) return;
+        _aplicador.Aplicar(imagen, _ajustes.FiltroActual, estado.OjoIzquierdo, estado.OjoDerecho,
+            new OpcionesFiltro(estado.Opacidad, Sombra: true, AjustarLuz: true));
     }
 
     private void Avisar(string accion) => EventoOcurrido?.Invoke(this, EventoNexora.Ahora(OrigenEvento.Cara, accion));

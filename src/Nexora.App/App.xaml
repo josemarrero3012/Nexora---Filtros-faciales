@@ -5,8 +5,21 @@
     al arrancar. En los Resources dejamos los colores y los estilos que se usan
     en toda la ventana (así no los repetimos en cada control).
 
-    Tema oscuro: fondo azul muy oscuro, tarjetas un poco más claras y un color
-    de acento cian, que es el mismo que usamos para la zona de control.
+    [Ampliación con uso de IA] Rediseño visual (ver docs/Uso-de-IA.md).
+    La estructura es la de clase (recursos compartidos + estilos con
+    ControlTemplate); lo que cambia son los colores, las letras y las plantillas.
+
+    La idea del diseño: Nexora es un instrumento que mira por una cámara, así
+    que la ventana se parece más a un aparato de laboratorio que a una web:
+      - Gris neutro y frío de fondo. Los programas de fotografía usan gris
+        neutro para no "teñir" lo que se ve en la imagen; aquí igual.
+      - Un color por módulo, y siempre el mismo en toda la ventana:
+        mano = cobalto, cara = ciruela, voz = ocre. El interruptor encendido,
+        el historial y el gesto actual usan ese color, así el color dice de
+        qué módulo es cada cosa.
+      - Rojo de "grabando" solo para el piloto de la cámara en directo.
+      - Letra Bahnschrift (viene con Windows 10 y 11, es la DIN de las
+        señales de tráfico) para títulos y números, y Segoe UI para el texto.
 -->
 <Application x:Class="Nexora.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -15,51 +28,94 @@
     <Application.Resources>
 
         <!-- ===================== Colores ===================== -->
-        <SolidColorBrush x:Key="FondoBrush" Color="#0F172A" />
-        <SolidColorBrush x:Key="TarjetaBrush" Color="#1E293B" />
-        <SolidColorBrush x:Key="TarjetaClaraBrush" Color="#273449" />
-        <SolidColorBrush x:Key="BordeBrush" Color="#334155" />
-        <SolidColorBrush x:Key="TextoBrush" Color="#E2E8F0" />
-        <SolidColorBrush x:Key="TextoSuaveBrush" Color="#94A3B8" />
-        <SolidColorBrush x:Key="AcentoBrush" Color="#38BDF8" />
-        <SolidColorBrush x:Key="VerdeBrush" Color="#34D399" />
-        <SolidColorBrush x:Key="AmbarBrush" Color="#FBBF24" />
-        <SolidColorBrush x:Key="RojoBrush" Color="#F87171" />
-        <SolidColorBrush x:Key="MoradoBrush" Color="#A78BFA" />
+        <Color x:Key="ColorFondo">#E3E4DF</Color>
+        <Color x:Key="ColorPanel">#F4F4F0</Color>
+        <Color x:Key="ColorHundido">#E9E9E4</Color>
+        <Color x:Key="ColorLinea">#C9CAC4</Color>
+        <Color x:Key="ColorTinta">#1D1E20</Color>
+        <Color x:Key="ColorTintaSuave">#5D6064</Color>
+        <Color x:Key="ColorMano">#2B54C9</Color>
+        <Color x:Key="ColorCara">#A0336A</Color>
+        <Color x:Key="ColorVoz">#A8730E</Color>
+        <Color x:Key="ColorDirecto">#D3263A</Color>
 
-        <!-- ===================== Textos ===================== -->
-        <Style x:Key="TituloTarjeta" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextoSuaveBrush}" />
-            <Setter Property="FontSize" Value="11" />
+        <SolidColorBrush x:Key="FondoBrush" Color="{StaticResource ColorFondo}" />
+        <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource ColorPanel}" />
+        <SolidColorBrush x:Key="HundidoBrush" Color="{StaticResource ColorHundido}" />
+        <SolidColorBrush x:Key="LineaBrush" Color="{StaticResource ColorLinea}" />
+        <SolidColorBrush x:Key="TintaBrush" Color="{StaticResource ColorTinta}" />
+        <SolidColorBrush x:Key="TintaSuaveBrush" Color="{StaticResource ColorTintaSuave}" />
+        <SolidColorBrush x:Key="ManoBrush" Color="{StaticResource ColorMano}" />
+        <SolidColorBrush x:Key="CaraBrush" Color="{StaticResource ColorCara}" />
+        <SolidColorBrush x:Key="VozBrush" Color="{StaticResource ColorVoz}" />
+        <SolidColorBrush x:Key="DirectoBrush" Color="{StaticResource ColorDirecto}" />
+        <SolidColorBrush x:Key="SobreVideoBrush" Color="#E6FFFFFF" />
+
+        <!-- ===================== Letras ===================== -->
+        <FontFamily x:Key="LetraTitulos">Bahnschrift, Segoe UI</FontFamily>
+        <FontFamily x:Key="LetraTexto">Segoe UI Variable Text, Segoe UI</FontFamily>
+
+        <!-- Título de cada parte del panel derecho -->
+        <Style x:Key="TituloSeccion" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource LetraTitulos}" />
+            <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
+            <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
 
         <Style x:Key="TextoSuave" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextoSuaveBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TintaSuaveBrush}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
-        <!-- ===================== Tarjeta (recuadro con fondo) ===================== -->
-        <Style x:Key="Tarjeta" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource TarjetaBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BordeBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="14,12" />
-            <Setter Property="Margin" Value="0,0,0,12" />
+        <!-- Etiqueta pequeña encima de un número de la barra de medidas -->
+        <Style x:Key="EtiquetaMedida" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TintaSuaveBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
+
+        <!-- El número grande de cada medida -->
+        <Style x:Key="ValorMedida" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource LetraTitulos}" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
+        </Style>
+
+        <!-- Cada parte del panel derecho: sin tarjetas, separadas por una línea fina -->
+        <Style x:Key="Seccion" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{StaticResource LineaBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="22,18,22,18" />
+        </Style>
+
+        <!-- Borde de foco para el teclado (Tab) -->
+        <Style x:Key="FocoTeclado">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="-3" RadiusX="4" RadiusY="4" StrokeThickness="2"
+                                   Stroke="{StaticResource ManoBrush}" SnapsToDevicePixels="True" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!--
             Interruptor: un CheckBox de toda la vida, pero con otra "plantilla"
             para que parezca un switch. El IsChecked sigue funcionando igual, así
             que el Binding con el ViewModel no cambia.
+            [IA] En Tag le pasamos el color del módulo; encendido se pinta de ese
+            color. La bolita se desliza en 120 ms cuando lo pulsas.
         -->
         <Style x:Key="Interruptor" TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
+            <Setter Property="Tag" Value="{StaticResource TintaBrush}" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Margin" Value="0,5" />
+            <Setter Property="Margin" Value="0,6" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocoTeclado}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
@@ -68,20 +124,40 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ContentPresenter VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <Border x:Name="Pista" Grid.Column="1" Width="40" Height="22" CornerRadius="11"
-                                    VerticalAlignment="Center" Background="{StaticResource BordeBrush}">
-                                <Ellipse x:Name="Bola" Width="16" Height="16" Margin="3,0" Fill="White"
-                                         HorizontalAlignment="Left" />
+                            <ContentPresenter VerticalAlignment="Center" Margin="0,0,14,0" />
+                            <Border x:Name="Pista" Grid.Column="1" Width="38" Height="20" CornerRadius="10"
+                                    VerticalAlignment="Center" Background="{StaticResource LineaBrush}">
+                                <Ellipse x:Name="Bola" Width="14" Height="14" Margin="3,0" Fill="White"
+                                         HorizontalAlignment="Left">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform x:Name="Desliza" X="0" />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
                             </Border>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Pista" Property="Background" Value="{StaticResource AcentoBrush}" />
-                                <Setter TargetName="Bola" Property="HorizontalAlignment" Value="Right" />
+                                <Setter TargetName="Pista" Property="Background"
+                                        Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Desliza" Storyboard.TargetProperty="X"
+                                                             To="18" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Desliza" Storyboard.TargetProperty="X"
+                                                             To="0" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4" />
+                                <Setter Property="Opacity" Value="0.45" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -89,58 +165,94 @@
             </Setter>
         </Style>
 
-        <!-- ===================== Botones planos ===================== -->
+        <!-- ===================== Botones ===================== -->
         <Style x:Key="BotonPlano" TargetType="Button">
-            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
-            <Setter Property="Background" Value="{StaticResource TarjetaClaraBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BordeBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource LineaBrush}" />
             <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocoTeclado}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Fondo" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
+                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource HundidoBrush}" />
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource TintaSuaveBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource BordeBrush}" />
+                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource LineaBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Botón blanco para encima del vídeo negro (cuando no hay cámara) -->
+        <Style x:Key="BotonSobreVideo" TargetType="Button" BasedOn="{StaticResource BotonPlano}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="FontSize" Value="13" />
         </Style>
 
         <!--
-            Botones de filtro: un ListBox con cada opción como una "pastilla".
-            La que está seleccionada se pinta con el color de acento.
+            Botones de filtro: un ListBox con cada opción como una "baldosa" con
+            el dibujo del filtro. [IA] El dibujo es el mismo PNG que se pone en
+            la cara (Recursos/Filtros), elegido según el Tipo con un DataTrigger.
         -->
-        <Style x:Key="PastillaFiltro" TargetType="ListBoxItem">
+        <Style x:Key="BaldosaFiltro" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocoTeclado}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Fondo" CornerRadius="14" Padding="10,5" BorderThickness="1"
-                                Background="{StaticResource TarjetaClaraBrush}" BorderBrush="{StaticResource BordeBrush}">
-                            <TextBlock x:Name="Texto" Text="{Binding Nombre}" FontSize="12"
-                                       Foreground="{StaticResource TextoBrush}" HorizontalAlignment="Center" />
-                        </Border>
+                        <StackPanel>
+                            <Border x:Name="Fondo" Height="60" CornerRadius="6" BorderThickness="2"
+                                    Background="{StaticResource HundidoBrush}" BorderBrush="Transparent">
+                                <Grid Margin="6">
+                                    <Image x:Name="Dibujo" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <!-- «Sin filtro»: un círculo tachado -->
+                                    <Grid x:Name="SinFiltro" Width="26" Height="26" Visibility="Collapsed">
+                                        <Ellipse Stroke="{StaticResource TintaSuaveBrush}" StrokeThickness="2" />
+                                        <Line X1="5" Y1="21" X2="21" Y2="5" Stroke="{StaticResource TintaSuaveBrush}" StrokeThickness="2" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                            <TextBlock x:Name="Texto" Text="{Binding Nombre}" FontSize="12" Margin="0,6,0,0"
+                                       Foreground="{StaticResource TintaSuaveBrush}" HorizontalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Fondo" Property="Background" Value="{StaticResource AcentoBrush}" />
-                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
-                                <Setter TargetName="Texto" Property="Foreground" Value="{StaticResource FondoBrush}" />
-                                <Setter TargetName="Texto" Property="FontWeight" Value="SemiBold" />
-                            </Trigger>
+                            <DataTrigger Binding="{Binding Tipo}" Value="Ninguno">
+                                <Setter TargetName="SinFiltro" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tipo}" Value="Gafas">
+                                <Setter TargetName="Dibujo" Property="Source" Value="pack://siteoforigin:,,,/Recursos/Filtros/gafas.png" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tipo}" Value="Orejas">
+                                <Setter TargetName="Dibujo" Property="Source" Value="pack://siteoforigin:,,,/Recursos/Filtros/orejas.png" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tipo}" Value="Mascara">
+                                <Setter TargetName="Dibujo" Property="Source" Value="pack://siteoforigin:,,,/Recursos/Filtros/mascara.png" />
+                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource AcentoBrush}" />
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource LineaBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Fondo" Property="BorderBrush" Value="{StaticResource CaraBrush}" />
+                                <Setter TargetName="Fondo" Property="Background" Value="White" />
+                                <Setter TargetName="Texto" Property="Foreground" Value="{StaticResource CaraBrush}" />
+                                <Setter TargetName="Texto" Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -148,11 +260,148 @@
             </Setter>
         </Style>
 
-        <!-- ===================== Etiquetas de los sliders ===================== -->
+        <!-- ===================== Sliders de los ajustes ===================== -->
         <Style x:Key="EtiquetaAjuste" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextoBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Margin" Value="0,8,0,2" />
+            <Setter Property="Margin" Value="0,12,0,4" />
+        </Style>
+
+        <Style x:Key="BotonPistaSlider" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Grid Background="Transparent">
+                            <Border Height="3" CornerRadius="1.5" Background="{TemplateBinding Background}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- [IA] Slider fino: la parte recorrida en tinta y la que falta en gris -->
+        <Style TargetType="Slider">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocoTeclado}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Track x:Name="PART_Track" Height="20">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="Slider.DecreaseLarge" Style="{StaticResource BotonPistaSlider}"
+                                              Background="{StaticResource TintaBrush}" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="Slider.IncreaseLarge" Style="{StaticResource BotonPistaSlider}"
+                                              Background="{StaticResource LineaBrush}" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse x:Name="Bola" Width="14" Height="14" Fill="White"
+                                                     Stroke="{StaticResource TintaBrush}" StrokeThickness="2" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="Bola" Property="Fill" Value="{StaticResource TintaBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- [IA] Desplegable de los ajustes: título a la izquierda y una flecha que gira -->
+        <Style x:Key="Desplegable" TargetType="Expander">
+            <Setter Property="Foreground" Value="{StaticResource TintaBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Top" Cursor="Hand"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          FocusVisualStyle="{StaticResource FocoTeclado}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ContentPresenter Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}" />
+                                            <Path x:Name="Flecha" Grid.Column="1" Data="M 0 0 L 5 5 L 10 0" Width="10" Height="6"
+                                                  Stroke="{StaticResource TintaSuaveBrush}" StrokeThickness="1.6"
+                                                  VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                                <Path.RenderTransform>
+                                                    <RotateTransform Angle="0" />
+                                                </Path.RenderTransform>
+                                            </Path>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Flecha" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <RotateTransform Angle="180" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="Contenido" Visibility="Collapsed" />
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="Contenido" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- [IA] Barra de desplazamiento fina (la de Windows por defecto desentona) -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="MinWidth" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="{TemplateBinding Orientation}">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border CornerRadius="3" Margin="1" Background="{StaticResource LineaBrush}" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto" />
+                    <Setter Property="MinWidth" Value="0" />
+                    <Setter Property="Height" Value="8" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
     </Application.Resources>

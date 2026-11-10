@@ -44,6 +44,13 @@ public sealed class AjustesNexora
     /// <summary>El filtro que está puesto ahora mismo.</summary>
     public TipoFiltro FiltroActual { get; set; } = TipoFiltro.Gafas;
 
+    /// <summary>
+    /// [Ampliación con uso de IA] Pintar el filtro con sombra suave, ajuste a
+    /// la luz de la cara y aparecer/desaparecer suave. Se puede apagar desde la
+    /// ventana para comparar con el filtro "tal cual" en las pruebas.
+    /// </summary>
+    public bool FiltroRealista { get; set; } = true;
+
     // ------------------------------------------------------------------
     //  Cámara
     // ------------------------------------------------------------------
